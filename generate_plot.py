@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Nov 29 10:14:43 2022
+Generate plots by calling the plot_1D function in the main file. 
+This includes plotting: 
+    potential across time at a particular cell (plot_1D_cell),
+    potential across cells (spatially) at a particular time (plot_1D_array),
+    and potential across time and space (plot_1D_grid).
+The function takes inputs:
+    data_list, dynamics, model, fig_name, x_t_to_plot, i.
 
-@author: mac
+Commented by Annie
 """
 
 import matplotlib.pyplot as plt
@@ -11,7 +17,7 @@ import numpy as np
 from PIL import Image
 import io
 
-def plot_1D(data_list,dynamics, model, fig_name, x_t_to_plot, i):
+def plot_1D(data_list, dynamics, model, fig_name, x_t_to_plot, i):
 
     plot_1D_cell(data_list, dynamics, model, fig_name[1:], x_t_to_plot[0], i)
     plot_1D_array(data_list, dynamics, model, fig_name[1:], x_t_to_plot[1], i)
@@ -21,7 +27,8 @@ def plot_1D(data_list,dynamics, model, fig_name, x_t_to_plot, i):
 def plot_1D_cell(data_list, dynamics, model, fig_name, x_to_plot, i):
     
      ## Unpack data
-    observe_x, observe_train, v_train, v = data_list[0], data_list[1], data_list[2], data_list[3]
+    observe_x, observe_train, v_train, v, observe_test, v_test= \
+          data_list[0], data_list[1], data_list[2], data_list[3], data_list[4], data_list[5]
     
     ## Pick a cell to show
     #cell = dynamics.max_x*x_to_plot
@@ -30,7 +37,7 @@ def plot_1D_cell(data_list, dynamics, model, fig_name, x_to_plot, i):
     szm = 50 # marker size
     ftsz = 20 # font size
     
-    ## Get data for cell 1
+    ## Get data for cell
     idx = [i for i,ix in enumerate(observe_x) if observe_x[i][0]==cell]
     observe_geomtime = observe_x[idx]
     v_GT = v[idx]
@@ -41,20 +48,29 @@ def plot_1D_cell(data_list, dynamics, model, fig_name, x_to_plot, i):
     idx_train = [i for i,ix in enumerate(observe_train) if observe_train[i][0]==cell]
     v_trained_points = v_train[idx_train]
     t_markers = (observe_train[idx_train])[:,1]
+
+    ## Get data for points used in testing
+    idx_test = [i for i,ix in enumerate(observe_test) if observe_test[i][0]==cell]
+    v_test_points = v_test[idx_test]
+    t_markers_test = (observe_test[idx_test])[:,1]
     
-    ## create figure for cell 1
+    ## create figure for cell
     plt.figure()
     plt.rc('font', size= ftsz) #controls default text
     fig, ax = plt.subplots()
-    Predicted, = ax.plot(t_axis, v_predict, c='r', label='Predicted',linewidth=lnw, zorder=5)
-    GT, = ax.plot(t_axis, v_GT, c='b', label='GT',linewidth=lnw, linestyle = 'dashed', zorder=0)
+    Predicted, = ax.plot(t_axis, v_predict, c='r', label='Predicted',linewidth=lnw, zorder=0)
+    GT, = ax.plot(t_axis, v_GT, c='b', label='GT',linewidth=lnw, linestyle = 'dashed', zorder=5)
     #plt.plot(t_axis, v_GT, c='b', label='GT')
     #plt.plot(t_axis, v_predict, c='r', label='Predicted')
     # If there are any trained data points for the current cell 
     if len(t_markers):
-        ax.scatter(t_markers, v_trained_points, marker='x', c='black',s=szm, label='Observed', zorder=10)
+        ax.scatter(t_markers, v_trained_points, marker='x', c='black',s=szm, label='Training points', zorder=10)
     plt.legend(loc='upper right', borderpad=0.2)
-    plt.title("run_" + str(i) + "cell_at" + str(x_to_plot) + "mm")
+    #if there are any test points for the current cell
+    if len(t_markers_test):
+        ax.scatter(t_markers_test, v_test_points, marker='x', c='green',s=szm, label='Testing points',zorder=10)
+
+    plt.title("_run_" + str(i) + "cell_at" + str(x_to_plot) + "mm")
     plt.xlabel('t (TU)', fontsize = ftsz)
     plt.ylabel('u (AU)', fontsize = ftsz)
     plt.ylim((-0.2,1.2))
