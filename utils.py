@@ -3,7 +3,7 @@
 """
 Created on Tue Feb 28 11:49:44 2023
 
-@author: mac
+@author: Annie
 """
 
 import scipy.io
@@ -49,10 +49,10 @@ class system_dynamics():
         self.tauv2=60.0 # tauv2-
         self.tauv1=82.5 # tauv1-
         self.tauvplus=5.75 # tauv+
-        self.tauo=10  #tauo
+        self.tauo=32.5  #tauo
         self.tauwminus=400.0 # tauw-
         self.tauwplus=300.0 # tauw+
-        self.taur=120.0 # taur
+        self.taur=70.0 # taur
         self.tausi=114.0 # tausi
 
 
@@ -102,31 +102,31 @@ class system_dynamics():
         ## The tf.variables are initialized with a positive scalar, relatively close to their ground truth values
         if 'taud' in args_param:
             #MATLAB values: taud=0.125 , taur=70 , tauo=32.5 , d=0.1,  tausi=114
-
-            #self.taud = tf.math.exp(tf.Variable(-0.69897)) #initiasilised to 0.2
             print("Estimatig taud")
-            self.taud = tf.math.exp(tf.Variable(-1.897119985))  #initiasilised to 0.15
-            #self.taud = tf.math.exp(tf.Variable(-2.353878387))  #initiasilised to 0.095
+            self.taud = tf.math.exp(tf.Variable(-2.07944154168))  #initiasilised to 0.125
             params.append(self.taud)
         if 'taur' in args_param:
             #self.taur = tf.math.exp(tf.Variable(1.69897))
             print("Estimatig taur")
-            self.taur = tf.math.exp(tf.Variable(4.787491743))  #initialised to 120 (originally 70)
+            self.taur = tf.math.exp(tf.Variable(4.24849524205))  #initialised to 70
+            #self.taur = tf.math.exp(tf.Variable(4.60517018598809)) #100
             params.append(self.taur)
         if 'tauo' in args_param:
             #self.tauo = tf.math.exp(tf.Variable(1.602))
             print("Estimatig tauo")
-            self.tauo = tf.math.exp(tf.Variable(2.30258509299))  #initialised to 10 (originally 31, exp(3.433987204))
+            self.tauo = tf.math.exp(tf.Variable(3.48124008934))  #initialised to 32.5
+            #self.tauo = tf.math.exp(tf.Variable(2.30258509299405)) #10
             params.append(self.tauo)
         if 'tausi' in args_param:
             print("Estimatig tausi")
-            self.tausi = tf.math.exp(tf.Variable(4.700480366))  #initialised to 110
+            self.tausi = tf.math.exp(tf.Variable(4.73619844839))  #initialised to 114
+            #self.tausi = tf.math.exp(tf.Variable(5.7037824746562)) #300
             params.append(self.tausi)
         if 'd' in args_param:
             #self.D = tf.math.exp(tf.Variable(-1.6))
             print("Estimatig D")
-            #self.D = tf.math.exp(tf.Variable(-2.302585093))  #initialised to 0.1
-            self.D = tf.math.exp(tf.Variable(-1.897119985))  #initialised to 0.15
+            self.D = tf.math.exp(tf.Variable(-2.302585093))  #initialised to 0.1
+            #self.D = tf.math.exp(tf.Variable(-1.897119985))  #initialised to 0.15
             params.append(self.D)
         return params
 
@@ -295,17 +295,24 @@ class system_dynamics():
         eq_b = dw_dt -  (self.epsilon + (self.mu_1*W)/(self.mu_2+V))*(-W -self.k*V*(V-self.b-1))
         return [eq_a, eq_b]
 
-    def IC_func(self,observe_train, v_train):
+    def IC_func(self, observe_train, v_train, geomtime):
+        #new code (give ICs for v,w=1, u=1 if x<5 else u=0)>>
+        def func_init_u(x):
+            arr1 = np.ones((5, 1))
+            num = 100 #round( (self.max_x - self.min_x)/self.spacing ) + 1
+            arr2 = np.zeros((num - 5, 1))
+            arr = np.concatenate((arr1, arr2))
+            return arr
+        
+        def func_init_vw(x):
+            return np.full_like(x[:,0:1], 1)
+        
+        ic_u = dde.IC(geomtime, func_init_u, lambda _, on_initial: on_initial, component=0)
+        ic_v = dde.IC(geomtime, func_init_vw, lambda _, on_initial: on_initial, component=1)
+        ic_w = dde.IC(geomtime, func_init_vw, lambda _, on_initial: on_initial, component=2)
 
-        T_ic = observe_train[:,-1].reshape(-1,1)
-        idx_init = np.where(np.isclose(T_ic,0))[0]  # before:  idx_init = np.where(np.isclose(T_ic,1))[0]
-        v_init = v_train[idx_init]
-        observe_init = observe_train[idx_init]
-        print("v_init")
-        print(v_init)
-        print("observe_init")
-        print(observe_init)
-        return dde.PointSetBC(observe_init,v_init,component=0)
+        return ic_u, ic_v, ic_w
+       #return dde.PointSetBC(observe_init,vwu_init)
 
     def BC_func(self,dim, geomtime):
         if dim == 1:
