@@ -77,22 +77,21 @@ def main(i, datafilename, writer):
     observe_x, u, w = dynamics.generate_data(file_name, dim)
 
     ## Split data to train and test
-    #observe_train, observe_test, u_train, u_test = train_test_split(observe_x, u, test_size=test_size, random_state=123) #randomly, original
-    #Select 1 test point for every 10 points
-    idx_x_test_cell1 = range(8, len(observe_x), 20)
-    idx_x_test_cell2 = range(9, len(observe_x), 20)
-    idx_x_test = np.sort(np.concatenate((np.array(idx_x_test_cell1), np.array(idx_x_test_cell2))))
+    #old code - choose test points randomly
+    #observe_train, observe_test, u_train, u_test = train_test_split(observe_x, u, test_size=test_size, random_state=123)
 
-    idx_u_test_cell1 = range(8, len(u), 20)
-    idx_u_test_cell2 = range(9, len(u), 20)
-    idx_u_test = np.sort(np.concatenate((np.array(idx_u_test_cell1), np.array(idx_u_test_cell2))))
+    #new code - select 1 test point for every 10 points at each unique location
+    train_mask = np.zeros(len(u), dtype=bool)
+    nlocs = len(np.unique(observe_x[:,0]))   #number of unique locations with observations
+    for i in range(nlocs):
+      train_mask[i::10] = True
 
-    observe_test = observe_x[idx_x_test]
-    u_test = u[idx_u_test]
+    u_test = u[train_mask]
+    u_train = u[~train_mask]
 
-    observe_train = np.delete(observe_x, idx_x_test, axis=0)
-    u_train =np.delete(u, idx_u_test, axis=0)
-    #print(observe_train)
+    observe_test = observe_x[train_mask]
+    observe_train = observe_x[~train_mask]
+
     ## Split with W
     if w_used:
       observe_train, observe_test, u_train, u_test, w_train, w_test = train_test_split(observe_x, u, w, test_size=test_size)
