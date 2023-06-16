@@ -31,7 +31,7 @@ class system_dynamics():
 #        self.min_y = 0.1
 #        self.max_y = 10
         self.min_t = 1
-        self.max_t = 100
+        self.max_t = 150
         self.spacing = 0.1
 
         ## FentonKarma additions
@@ -70,7 +70,7 @@ class system_dynamics():
             raise ValueError('Dimesion value argument has to be either 1 or 2')
 
         self.max_t = np.max(t)
-        self.max_x = np.max(x)
+        #self.max_x = np.max(x)
         X = X.reshape(-1, 1)
         T = T.reshape(-1, 1)
         U = usav.reshape(-1, 1)
@@ -137,9 +137,8 @@ class system_dynamics():
         du_dxx = dde.grad.hessian(y, x, component=0, i=0, j=0)
         dw_dt = dde.grad.jacobian(w, x, i=0, j=1)
 
-
-        tauv = tf.cast(tf.math.less_equal(self.uvsi, u),tf.float32)*self.tauv2 + tf.cast(tf.math.less_equal(u, self.uvsi),tf.float32)*self.tauv1
-        tauv = tf.cast(tf.math.less_equal(u, self.uv),tf.float32)*tauv + tf.cast(tf.math.less_equal(self.uv, u),tf.float32)*self.tauvplus
+        tauvminus = tf.cast(tf.math.less_equal(self.uvsi, u),tf.float32)*self.tauv1 + tf.cast(tf.math.less_equal(u, self.uvsi),tf.float32)*self.tauv2
+        tauv = tf.cast(tf.math.less_equal(u, self.uv),tf.float32)*tauvminus + tf.cast(tf.math.less_equal(self.uv, u),tf.float32)*self.tauvplus
         vinf = tf.cast(tf.math.less_equal(u, self.uv),tf.float32)
         Fu = tf.cast(tf.math.less_equal(self.uv,u),tf.float32)*((u-self.uv)*(tf.ones([1],tf.float32)-u))
         Jfi = Fu*(-v) / self.taud  # Fast Inward current
@@ -171,7 +170,7 @@ class system_dynamics():
         #Istim = tf.where(tf.logical_or(first_cond_stim,second_cond_stim),I_stim,I_not_stim)
         # end boundary and initial conditions
 
-        Iion = -(Jfi + Jsi + Jso) #modified
+        Iion = -(Jfi + Jsi + Jso) #removed Istim
 
         eq_a = du_dt - (Iion+self.D*du_dxx)
         eq_b = dv_dt - (vinf - v) / tauv
