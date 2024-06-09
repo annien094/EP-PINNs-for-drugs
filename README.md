@@ -9,9 +9,6 @@ In "main.py", the network architecture is defined, compiled and trained. RMSEs a
 
 Functions in "utils.py" include: initialising parameter values, loading data, setting the geoemetry, setting the initial guess for parameter estimation, defining the physical equations (1D Fenton-Karma), and setting initial and boundary conditions.
 
-"generate_plots.py" include different plotting options: 
-    - plotting potential u across time at a particular cell (plot_1D_cell),
-    - plotting potential u across cells (spatially) at a particular time (plot_1D_array),
-    - and plotting potential across time and space (plot_1D_grid).
+"generate_plots.py" include different plotting options: plotting potential u across time at a particular cell (plot_1D_cell), plotting potential u across cells (spatially) at a particular time (plot_1D_array), and plotting potential across time and space (plot_1D_grid).
 
 "params_plot.py" is used to visualise the parameter estimation result. It reads the result file and plots parameter estimates across epochs.
